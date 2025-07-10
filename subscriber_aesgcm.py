@@ -39,10 +39,10 @@ def try_decrypt(enc_b64: bytes, key: bytes) -> str | None:
     try:
         enc = base64.b64decode(enc_b64, validate=True)
     except Exception:
-        print("❌ Base64 decode gagal")
+        print(" Base64 decode gagal")
         return None
     if len(enc) <= NONCE_LEN + 16:
-        print("❌ Payload terlalu pendek")
+        print(" Payload terlalu pendek")
         return None
 
     nonce, ct_tag = enc[:NONCE_LEN], enc[NONCE_LEN:]
@@ -52,12 +52,12 @@ def try_decrypt(enc_b64: bytes, key: bytes) -> str | None:
         if b"," in pt:
             return pt.decode().strip()
     except Exception as e:
-        print(f"❌ Decrypt gagal: {e}")
+        print(f" Decrypt gagal: {e}")
     return None
 
 # ── Callback MQTT ────────────────────────────────────────
 def on_connect(c, u, f, rc):
-    print("✓ Terhubung ke broker MQTT, kode:", rc)
+    print(" Terhubung ke broker MQTT, kode:", rc)
     c.subscribe("#")
 
 def on_message(c, u, msg):
@@ -69,7 +69,7 @@ def on_message(c, u, msg):
 
     key = TOPIC_KEYS.get(token)
     if not key:
-        print(f"🚫 Tidak ada key untuk token: {token}")
+        print(f" Tidak ada key untuk token: {token}")
         return
 
     plain = try_decrypt(msg.payload.strip(), key)
@@ -85,7 +85,7 @@ def on_message(c, u, msg):
 
     parts = plain.split(",")
     if len(parts) < 10:
-        print("⚠ Format data tidak valid:", plain)
+        print(" Format data tidak valid:", plain)
         return
 
     device_time  = parts[0]
@@ -106,14 +106,14 @@ def on_message(c, u, msg):
         f"{aktivitas}"
     )
 
-    print("📤 Plaintext:", csv_out)
+    print(" Plaintext:", csv_out)
 
     nonce_out   = os.urandom(NONCE_LEN)
     aesgcm_out  = AESGCM(key)
     ct_tag_out  = aesgcm_out.encrypt(nonce_out, csv_out.encode(), AD)
     enc_payload = base64.b64encode(nonce_out + ct_tag_out).decode()
 
-    print(f"📦 → hasil/{token} (len = {len(enc_payload)} B)")
+    print(f" → hasil/{token} (len = {len(enc_payload)} B)")
     print("--------------------------------------------------")
 
     c.publish(f"hasil/{token}", enc_payload, qos=0, retain=True)
