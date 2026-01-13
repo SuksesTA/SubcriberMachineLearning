@@ -7,11 +7,9 @@ import paho.mqtt.client as mqtt
 from joblib import load
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-# ── Konstanta ─────────────────────────────────────────────
 NONCE_LEN = 12
 AD        = b""
 
-# ── Mapping topik ke key ─────────────────────────────────
 TOPIC_KEYS = {
     "AMtjeB": bytes([0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe,
                      0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81]),
@@ -25,16 +23,13 @@ TOPIC_KEYS = {
                      0x80, 0xf3, 0xb6, 0x76, 0x1a, 0x26, 0x38, 0x9e])
 }
 
-# ── Model ML ──────────────────────────────────────────────
 model  = load("SVM_model.pkl")
 scaler = load("scaler.pkl")
 label_map = {0: "Jalan", 1: "Lari", 2: "Mobil"}
 
-# ── Rate-limit cache ─────────────────────────────────────
 RATE_LIMIT = 1.0
 LAST_SEEN  = defaultdict(lambda: {"payload": None, "ts": 0.0})
 
-# ── Fungsi dekripsi ──────────────────────────────────────
 def try_decrypt(enc_b64: bytes, key: bytes) -> str | None:
     try:
         enc = base64.b64decode(enc_b64, validate=True)
@@ -55,7 +50,6 @@ def try_decrypt(enc_b64: bytes, key: bytes) -> str | None:
         print(f" Decrypt gagal: {e}")
     return None
 
-# ── Callback MQTT ────────────────────────────────────────
 def on_connect(c, u, f, rc):
     print(" Terhubung ke broker MQTT, kode:", rc)
     c.subscribe("#")
@@ -118,7 +112,6 @@ def on_message(c, u, msg):
 
     c.publish(f"hasil/{token}", enc_payload, qos=0, retain=True)
 
-# ── Mulai MQTT client ────────────────────────────────────
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
